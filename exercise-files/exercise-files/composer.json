@@ -1,0 +1,10 @@
+{
+    "require": {
+        "phpmailer/phpmailer": "^7.2.32"
+    },
+    "autoload" : {
+        "classmap": [ "classes" ]
+    }
+
+
+}
