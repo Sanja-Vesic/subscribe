@@ -133,78 +133,12 @@ function validate_user_registration(){
 function register_user($email){
 $email = escape($email);
 
-
+    //   getIp(); 
     if(email_exist($email)){
         return false;
     }  else { 
-        getIp(); 
-        $time = date('Y-m-d H:i:s');
-        $time_now = strtotime($time);
-        $validation_code = md5(microtime());
-        $sql = "INSERT INTO users(email,validation_code, active,time_now)";
-        $sql.= " VALUES('$email','$validation_code', 0,$time_now)";
-        $result = query($sql);
-        confirm($result);
-        $subject= "Activate Account";
-        $msg = "Please click the link below to activate your account
-       <a href=\"http://localhost/subs/exercise-files/exercise-files/activate.php?email=$email&code=$validation_code&time_now=$time_now\">;
-       LINK HERE </a>";
-        $headers = "From: norepply@yourwebsite.com";
-        send_email($email, $subject, $msg, $headers);
-      
-       
-
-        return true;
-    }  
-       
-} 
-
-
-/**************Activate user functions****************/
-function activate_user(){
-if($_SERVER['REQUEST_METHOD'] == "GET"){
-    if(isset($_GET['email'])){
-       $sql = "SELECT time_now FROM users WHERE email='".escape($_GET['email'])."' AND validation_code = '".escape($_GET['code'])."' AND  time_now = '".escape($_GET['time_now'])."' ";
-        $result = query($sql);
-        confirm($result);
-    
-        $now = date('Y-m-d H:i:s');
-        $time = strtotime($now);      
-        
-      
-      while ($row = mysqli_fetch_array($result)) {
-             
-                foreach($row as $key => $value) {  
-                   
-                    if(row_count($result) == 1 && ($time - $value) <60) {   
-                        $sql="INSERT INTO verified_users SELECT  email, dateNow FROM users WHERE email='".escape($_GET['email'])."'";
-
-                            $result2 = query($sql);
-                            confirm($result2);
-                            $sql22 = "DELETE FROM users WHERE email='".escape($_GET['email'])."'";
-                            $result22 = query($sql22);
-                            confirm($result22);
-                        set_message("<p class='bg-success'>You are now subscribed!</p>");
-                        }
-                                else if(($time - $value) >= 60){
-                                    $sql = "DELETE FROM users WHERE email='".escape($_GET['email'])."'";
-                                    $result3 = query($sql);
-                                    confirm($result3);
-                                                //  set_message("<p class='bg-success'>Sorry, your link expired</p>");                                               
-                                                
-                                                  redirect("subscribeAgain.php");
-                                                              }                                   
-                                        else{
-                                            set_message("<p class='bg-success'>Sorry, your account could not be activated</p>");
-                                        }               
-               }       
-            
-    }   
-    }}}
-
-    function getIp(){
         $ip = isset($_SERVER['HTTP_CLIENT_IP']) ? $_SERVER['HTTP_CLIENT_IP'] : isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : $_SERVER['REMOTE_ADDR'];
-
+    
         try{
             //$ip=$_GET['ip'];
             $statusCode='';
@@ -221,18 +155,23 @@ if($_SERVER['REQUEST_METHOD'] == "GET"){
             $response = file_get_contents($url);
              $json_array=json_decode($response,true);
              
-             
-               function insert_into_database($statusCode,$statusMessage,$ipAddress,$countryCode,$countryName,$regionName,$cityName,$zipCode,$latitude,$longitude){
+           
+             function insert_into_database($statusCode,$ipAddress,$countryCode,$countryName,$regionName,$zipCode,$latitude,$longitude,$timeZone){
                 //    require_once('db_config.php');
                    if($statusCode=='OK'){
-                       $sql='insert into users(statusCode,ipAddress,countryCode,countryName,regionName,zipCode,latitude,longitude,timeZone) value (?,?,?,?,?,?,?,?,?)';
-                       $stm=mysqli_prepare($conn,$sql);
-                       mysqli_stmt_bind_param($stm,"sssssssss",$statusCode,$ipAddress,$countryCode,$countryName,$regionName,$zipCode,$latitude,$longitude,$timeZone);
-                       mysqli_stmt_execute($stm);
+                       
+                    $sql5 = "INSERT INTO users(statusCode,ipAddress,countryCode,countryName,regionName,zipCode,latitude,longitude,timeZone)";
+                    $sql5.= " VALUES('$statusCode','$ipAddress','$countryCode','$countryName','$regionName','$zipCode','$latitude','$longitude','$timeZone')";
+                    $result = query($sql5);
+                    confirm($result);
+
+                    
+                       //    $stm=mysqli_prepare($conn,$sql);
+                    //    mysqli_stmt_bind_param($stm,"sssssssss",$statusCode,$ipAddress,$countryCode,$countryName,$regionName,$zipCode,$latitude,$longitude,$timeZone);
+                    //    mysqli_stmt_execute($stm);
                    }
                } 
-           
-                
+             
             function display_array_recursive($json_rec){
                    if($json_rec){
                        foreach($json_rec as $key=> $value){
@@ -270,7 +209,8 @@ if($_SERVER['REQUEST_METHOD'] == "GET"){
                                }
                                if($key=='longitude'){
                                    $longitude=$value;
-                                   insert_into_database($statusCode,$statusMessage,$ipAddress,$countryCode,$countryName,$regionName,$cityName,$zipCode,$latitude,$longitude);
+                                
+                                      insert_into_database($statusCode,$statusMessage,$ipAddress,$countryCode,$countryName,$regionName,$cityName,$zipCode,$latitude,$longitude);
                                }
                            }	
                        }	
@@ -280,6 +220,70 @@ if($_SERVER['REQUEST_METHOD'] == "GET"){
            }catch(Exception $e){
                echo $e->getMessage();
            }
-    }
+        
+        $time = date('Y-m-d H:i:s');
+        $time_now = strtotime($time);
+        $validation_code = md5(microtime());
+        $sql = "INSERT INTO users(email,validation_code, active,time_now)";
+        $sql.= " VALUES('$email','$validation_code', 0,'$time_now')";
+        $result = query($sql);
+        confirm($result);
+        $subject= "Activate Account";
+        $msg = "Please click the link below to activate your account
+       <a href=\"http://localhost/subs/exercise-files/exercise-files/activate.php?email=$email&code=$validation_code&time_now=$time_now\">;
+       LINK HERE </a>";
+        $headers = "From: norepply@yourwebsite.com";
+        send_email($email, $subject, $msg, $headers);
+      
+       
+
+        return true;
+    }  
+       
+} 
+
+
+/**************Activate user functions****************/
+function activate_user(){
+if($_SERVER['REQUEST_METHOD'] == "GET"){
+    if(isset($_GET['email'])){
+       $sql = "SELECT time_now FROM users WHERE email='".escape($_GET['email'])."' AND validation_code = '".escape($_GET['code'])."' AND  time_now = '".escape($_GET['time_now'])."' ";
+        $result = query($sql);
+        confirm($result);
+    
+        $now = date('Y-m-d H:i:s');
+        $time = strtotime($now);      
+        
+      
+      while ($row = mysqli_fetch_array($result)) {
+             
+                foreach($row as $key => $value) {  
+                   
+                    if(row_count($result) == 1 && ($time - $value) <60000) {   
+                        $sql2="INSERT INTO verified_users (email, dateNow,statusCode,ipAddress,countryCode,countryName,regionName,zipCode,latitude,longitude,timeZone) SELECT  email, dateNow,statusCode,ipAddress,countryCode,countryName,regionName,zipCode,latitude,longitude,timeZone FROM users WHERE email='".escape($_GET['email'])."'";
+
+                            $result2 = query($sql2);
+                            confirm($result2);
+                            $sql22 = "DELETE FROM users WHERE email='".escape($_GET['email'])."'";
+                            $result22 = query($sql22);
+                            confirm($result22);
+                        set_message("<p class='bg-success'>You are now subscribed!</p>");
+                        }
+                                else if(($time - $value) >= 6000000){
+                                    $sql = "DELETE FROM users WHERE email='".escape($_GET['email'])."'";
+                                    $result3 = query($sql);
+                                    confirm($result3);
+                                                 set_message("<p class='bg-success'>Sorry, your link expired</p>");                                               
+                                                
+                                                  redirect("subscribeAgain.php");
+                                                              }                                   
+                                        else{
+                                            set_message("<p class='bg-success'>Sorry, your account could not be activated</p>");
+                                        }               
+               }       
+            
+    }   
+    }}}
+ 
     
 ?>
